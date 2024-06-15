@@ -2,6 +2,9 @@ package main
 
 import (
 	"log"
+	"net/http"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,7 +19,11 @@ type mercureeServer struct {
 
 func newMercureeServer() *mercureeServer {
 	upgrader := websocket.NewUpgrader()
-	upgrader.KeepaliveTime = time.Minute * 5
+	upgrader.KeepaliveTime = getKeepaliveTimeout()
+	upgrader.CheckOrigin = func(r *http.Request) bool {
+		return true
+	}
+
 	server := &mercureeServer{
 		upgrader: upgrader,
 		clients:  newClientList(),
@@ -74,4 +81,18 @@ func (s *mercureeServer) subscriber() gin.HandlerFunc {
 
 func (s *mercureeServer) publish(topic, data string) {
 	s.clients.broadcast(topic, data)
+}
+
+func getKeepaliveTimeout() time.Duration {
+	e := os.Getenv("KEEPALIVE_TIMEOUT")
+	if e == "" {
+		return time.Minute * 10
+	}
+
+	d, err := strconv.Atoi(e)
+	if err != nil {
+		return time.Minute * 10
+	}
+
+	return time.Duration(d) * time.Minute
 }
