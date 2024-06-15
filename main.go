@@ -42,7 +42,7 @@ func startup() {
 	r.POST("/publish", publish)
 
 	r.Use(subscriberTokenMiddleware())
-	r.Use(server.subscriber())
+	r.GET("/subscribe", server.subscriber())
 
 	// pub/sub ends here
 
